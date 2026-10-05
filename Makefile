@@ -28,11 +28,17 @@ FORCE:
 # RTL Design and Verification
 # =============================================================================
 
-## Run RTL simulations
-%.sim: FORCE
+# Check Testbench Exists
+%.check: FORCE
+	@test -e $(TB_DIR)/$*/$*.f || { \
+		echo "ERROR: Testbench $* does not exist: Expected '$(TB_DIR)/$*/$*.f' "; exit 1; \
+	}
+
+## Run RTL Simulations
+%.sim: %.check FORCE
 	@mkdir -p $(SIM_DIR)/$*
 	@mkdir -p $(REPORT_DIR)/$*
-	@$(SIM) -f $(SIM_FLAGS) --Mdir $(SIM_DIR)/$* -f $(TB_DIR)/$*.f > $(SIM_DIR)/$*/$(SIM).log
+	@$(SIM) -f $(SIM_FLAGS) --Mdir $(SIM_DIR)/$* -f $(TB_DIR)/$*/$*.f > $(SIM_DIR)/$*/$(SIM).log
 	@$(SIM_DIR)/$*/V$* > $(REPORT_DIR)/$*/$(SIM).log
 
 # =============================================================================

@@ -15,7 +15,7 @@ export SCRIPTS_DIR="${PROJECT_ROOT}/scripts"
 export SIM_DIR="${PROJECT_ROOT}/sim"
 export SYNTH_DIR="${PROJECT_ROOT}/synth"
 export APR_DIR="${PROJECT_ROOT}/apr"
-export REPORT_DIR="${PROJECT_ROOT}/report"
+export REPORT_DIR="${PROJECT_ROOT}/reports"
 
 # =============================================================================
 # Simulator Setup

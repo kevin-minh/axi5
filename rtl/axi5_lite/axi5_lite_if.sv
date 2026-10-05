@@ -15,9 +15,11 @@ interface axi5_lite_if #(
   parameter int unsigned ID_W_WIDTH = 4,
   parameter int unsigned ID_R_WIDTH = 4,
 
-  parameter int unsigned USER_REQ_WIDTH  = 0,
-  parameter int unsigned USER_DATA_WIDTH = 0,
-  parameter int unsigned USER_RESP_WIDTH = 0,
+  parameter int unsigned AW_USER_WIDTH = 0,
+  parameter int unsigned W_USER_WIDTH  = 0,
+  parameter int unsigned B_USER_WIDTH  = 0,
+  parameter int unsigned AR_USER_WIDTH = 0,
+  parameter int unsigned R_USER_WIDTH  = 0,
 
   localparam int unsigned STRB_WIDTH = DATA_WIDTH/8
   ) (
@@ -35,16 +37,12 @@ interface axi5_lite_if #(
   typedef logic [ID_W_WIDTH-1:0] wid_t; // write id
   typedef logic [ID_R_WIDTH-1:0] rid_t; // read id
 
-  // Custom user defined extensions to transfers
-  if (USER_REQ_WIDTH >= 0) begin
-    typedef logic [USER_REQ_WIDTH-1:0]  user_req_t;
-  end
-  if (USER_DATA_WIDTH >= 0) begin
-    typedef logic [USER_REQ_WIDTH-1:0]  user_req_t;
-  end
-  if (USER_RESP_WIDTH >= 0) begin
-    typedef logic [USER_REQ_WIDTH-1:0]  user_req_t;
-  end
+  // Custom user signals
+  typedef logic [(AW_USER_WIDTH > 0 ? AW_USER_WIDTH : 1)-1:0] aw_user_t;
+  typedef logic [(W_USER_WIDTH  > 0 ? W_USER_WIDTH  : 1)-1:0] w_user_t;
+  typedef logic [(B_USER_WIDTH  > 0 ? B_USER_WIDTH  : 1)-1:0] b_user_t;
+  typedef logic [(AR_USER_WIDTH > 0 ? AR_USER_WIDTH : 1)-1:0] ar_user_t;
+  typedef logic [(R_USER_WIDTH  > 0 ? R_USER_WIDTH  : 1)-1:0] r_user_t;
 
   // ==========================================================================
   // Signals
@@ -57,21 +55,21 @@ interface axi5_lite_if #(
   logic [2:0] aw_size;  // number of bytes per transfer (2^aw_size)
   logic [2:0] aw_prot;  // protection attributes
   wid_t       aw_id;
-  user_req_t  aw_user;  // custom user extension on write reqs
+  aw_user_t   aw_user;  // custom user extension on write reqs
 
   // Write Data Signals
-  logic       w_valid;
-  logic       w_ready;
-  data_t      w_data;
-  strb_t      w_strb; // indicates which data bytes are valid
-  user_data_t w_user; // custom user extension on write data transfers
+  logic    w_valid;
+  logic    w_ready;
+  data_t   w_data;
+  strb_t   w_strb;  // indicates which data bytes are valid
+  w_user_t w_user;  // custom user extension on write data
 
   // Write Response Signals
-  logic       b_valid;
-  logic       b_ready;
-  bresp_e     b_resp;  // response status 
-  wid_t       b_id;
-  user_resp_t b_user;  // custom user extension on write response
+  logic    b_valid;
+  logic    b_ready;
+  bresp_e  b_resp;  // response status 
+  wid_t    b_id;
+  b_user_t b_user;  // custom user extension on write response
 
   // Read Request Signals
   logic       ar_valid;
@@ -80,15 +78,22 @@ interface axi5_lite_if #(
   logic [2:0] ar_size;
   logic [2:0] ar_prot;  // protection attributes
   rid_t       ar_id;
-  user_req_t  ar_user;  // custom user extension on read request
+  ar_user_t   ar_user;  // custom user extension on read reqs
 
   // Read Response Signals
-  logic       r_valid;
-  logic       r_ready;
-  data_t      r_data;
-  rresp_e     r_resp;  // response status
-  rid_t       r_id;
-  user_resp_t r_user;  // custom user extension on read response
+  logic    r_valid;
+  logic    r_ready;
+  data_t   r_data;
+  rresp_e  r_resp;  // response status
+  rid_t    r_id;
+  r_user_t r_user;  // custom user extension on read data
+
+  // If user signals are not used, tie-down for synthesis opt-out
+  if (AW_USER_WIDTH == 0) assign aw_user = '0;
+  if (W_USER_WIDTH == 0)  assign w_user  = '0;
+  if (B_USER_WIDTH == 0)  assign b_user  = '0;
+  if (AR_USER_WIDTH == 0) assign ar_user = '0;
+  if (R_USER_WIDTH == 0)  assign r_user  = '0;
 
   // ==========================================================================
   // Modports
