@@ -1,10 +1,8 @@
-//
-// Verilator argument filelist
-//
+--binary
 
-// Strict warnings
+--sv
+
 -Wall
-// Don't exit on warning
 -Wno-fatal
 
 // Multithreading

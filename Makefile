@@ -1,50 +1,55 @@
-# Check if VERILATOR_ROOT is the environment, else assume in PATH
-ifeq ($(VERILATOR_ROOT),)
-VERILATOR = verilator
-VERILATOR_COVERAGE = verilator_coverage
-else
-export VERILATOR_ROOT
-VERILATOR = $(VERILATOR_ROOT)/bin/verilator
-VERILATOR_COVERAGE = $(VERILATOR_ROOT)/bin/verilator_coverage
+# =============================================================================
+# Top-Level Project Makefile
+# =============================================================================
+ENV_FILE := config/env.sh
+ifndef PROJECT_ROOT
+$(error Environment variables not set. Please run 'source $(ENV_FILE)' before running make commands.)
 endif
 
-VERILATOR_FLAGS = -f $(SCRIPTS_DIR)/verilator.f --Mdir $(SIM_DIR) -y $(SRC_DIR)
+.ONESHELL:
 
-SRC_DIR = src
-TEST_DIR = tb
-SCRIPTS_DIR = scripts
-
-REPORT_DIR = reports
-SIM_DIR = sim
-
-TOP_FILE = axi.sv
-
-SRCS := $(wildcard $(SRC_DIR)/*.sv)
-TBS := $(wildcard $(TEST_DIR)/*.sv)
-
-.DEFAULT_GOAL := help
+.PHONY: help
+.DEFAULT_GOAL: help
 help:
-	@echo "Usage: make [target]"
-	@echo 
-	@echo "Targets:"
-	@awk '/^[a-zA-Z_-]+:$$/{flag=1; next} /^[a-zA-Z_-]+:.*##/{sub(".*##", ""); printf "  %-20s%s\n",$$1,$$2; next} flag' Makefile | grep -v '#'@echo 
+	@clear
+	@echo "================================================================================"
+	@echo "  Project Build System"
+	@echo "================================================================================"
+	@echo "Usage: make [target] [OPTION=value]"
+	@echo ""
+	@echo "Available targets:"
+	@awk '/^## / {desc=substr($$0, 4)} /^[a-zA-Z0-9_%.-]+:/ {if (desc) {printf "  \033[36m%-15s\033[0m %s\n", $$1, desc; desc=""}}' $(firstword $(MAKEFILE_LIST)) | sed 's/://'
+	@echo "================================================================================"
 
-%.sim:
-	@echo
-	VERILATOR --binary $(VERILATOR_FLAGS) $(TEST_DIR)/$*.sv -o out
-	@echo
-	mkdir -p $(REPORT_DIR)
-	$(SIM_DIR)/out > $(REPORT_DIR)/$*.sim.out
+.PHONY: FORCE
+FORCE:
 
-.PHONY: sim
-sim:
-	make axi.sim
+# =============================================================================
+# RTL Design and Verification
+# =============================================================================
 
-%.lint: 
-	@echo
-	VERILATOR --lint-only $(VERILATOR_FLAGS) $(SRC_DIR)/$(TOP_FILE)
-	@echo
+## Run RTL simulations
+%.sim: FORCE
+	@mkdir -p $(SIM_DIR)/$*
+	@mkdir -p $(REPORT_DIR)/$*
+	@$(SIM) -f $(SIM_FLAGS) --Mdir $(SIM_DIR)/$* -f $(TB_DIR)/$*.f > $(SIM_DIR)/$*/$(SIM).log
+	@$(SIM_DIR)/$*/V$* > $(REPORT_DIR)/$*/$(SIM).log
 
+# =============================================================================
+# Cleanup
+# =============================================================================
+
+.PHONY: clean nuke
+
+## Delete RTL simulation build directories and reports
 clean:
-	rm -rf $(SIM_DIR)
-	rm -rf $(REPORT_DIR)
+	@rm -rf $(SIM_DIR)
+	@rm -rf $(REPORT_DIR)
+
+## Delete synthesis outputs
+clean_synth: 
+	@rm -rf $(SYNTH_DIR)
+
+## Delete APR outputs
+clean_apr: 
+	@rm -rf $(APR_DIR)
